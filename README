@@ -1,0 +1,6 @@
+byzantium
+- const - constants
+- config - configuration management
+- utils - random utils
+- avahi - avahi client/registry stuff
+
