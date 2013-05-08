@@ -54,4 +54,4 @@ class Const:
 
 const = Const().load()
 
-__all__ = ['avahi','const']
+__all__ = ['avahi','const', 'config', 'utils']
