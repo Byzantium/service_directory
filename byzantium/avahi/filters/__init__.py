@@ -1,5 +1,6 @@
 import imp
 import os
+import glob
 from ...config import Config
 from ...utils import Utils
 
@@ -14,31 +15,37 @@ def import_source(name, path):
 	except:
 		return None
 
-def get_filters_from(dirname):
-	logging.debug('get_filters_from '+dirname)
-	filters = []
-	for module in os.listdir(dirname):
-		if module != '__init__.py'  and module[-3:] == '.py':
-			mod = import_source(module[:-3], module)
-			logging.debug(dir(mod))
-			if 'Filter' in dir(mod): filters.append(mod.Filter())
-	del module
-	return filters
+def get_filter_from(path, mod_name, class_name):
+	logging.debug('get_filter_from:\npath: %s\nmodule: %s\nclass: %s' % (path,mod_name,class_name))
+	if class_name: name = mod_name+'.'+class_name
+	f = open(path, 'r')
+	try:
+		mod = imp.load_module(name, f, path, )
+	finally:
+		f.close()
+	filter_obj = mod()
+	del mod
+	return filter_obj
 
 def get_internal_filters():
-	return get_filters_from(os.path.dirname(__file__))
+	filters = []
+	for f in glob.glob(os.path.dirname(__file__)+"/*.py"):
+		if not f.endswith('__init__.py'):
+			filters.append(get_filters_from(f))
 
 def get_external_filters():
 	filters = []
-	external_filters = conf.get('external_filters')
+	external_filters = conf.get('external_filters_dir', set_type='config_dir')
 	if not external_filters: return filters
-	for name,path in external_filters.items():
-		if os.path.isdir(path):
-			filters += get_filters_from(path)
-		else:
-			mod = import_source()
-			if 'Filter' in dir(mod):
-				filters.append(mod.Filter())
+	for c in external_filters:
+		path = c.get('filter_path')
+		module_name = os.path.splitext(os.path.basename(path))[0]
+		class_name = c.get('class_name')
+		if os.path.exists(path):
+			try:
+				filters.append(get_filter_from(path, module_name, class_name))
+			except ImportError as e:
+				logging.error(e)
 	return filters
 
 def get_all_filters():

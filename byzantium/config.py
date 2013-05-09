@@ -30,9 +30,26 @@ class Config(object):
     def __call__(self):
         return self._values
 
-    def get(self, key, default=None):
-        if key in self._values:
-            return self._values[key]
+    def _set_type(self, value, default, _type):
+        if not _type or type(value) == _type: return value
+        else:
+            try:
+                return _type(value)
+            except TypeError as e:
+                logging.error(e)
+        return default
+
+    def get(self, *keys, default=None, set_type=None):
+        if len(keys) > 1:
+            values = self._values.copy()
+            for k in keys:
+                if k in values:
+                    values = values[k]
+            return self._set_type(values, default, set_type)
+        elif len(keys) == 1:
+            key = keys[0]
+            if key in self._values:
+                return self._set_type(self._values[key], default, set_type)
         return default
 
     def __getitem__(self, key):

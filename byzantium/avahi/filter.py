@@ -7,7 +7,7 @@ class AvahiFilter:
     def __init__(self):
         self.logging = utils.Utils().get_logging()
 
-    def match(self, record):
+    def match(self, record, action=None):
         '''
         do something with the record passed with a new service, new info about a service or a removed one.
         return True to have the record stored in the service index

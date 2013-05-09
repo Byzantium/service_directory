@@ -80,7 +80,7 @@ class AvahiWrangler(pykka.ThreadingActor):
                 self.send_filtered(message['record'], message['action'])
 
     def send_filtered(self, record, action):
-        if True in [x.match(record) for i in self.filters]:
+        if True in [x.match(record, action) for i in self.filters]:
                 if message['action'] == 'update':
                     self.service_index.update(message['record'])
                 elif message['action'] == 'remove':
