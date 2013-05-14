@@ -4,6 +4,7 @@
 import os
 import logging
 import subprocess
+from . import convert2type, mknum
 try:
     import configparser
 except ImportError:
@@ -47,7 +48,7 @@ class Utils:
                 section[k] = convert2obj(v)
         return config
 
-    def ini2dict(self, filename):
+    def ini2dict(self, filename, section=None):
         '''Load all sections of an ini file as a list of dictionaries'''
         conpar = configparser.SafeConfigParser()
         conpar.read(filename)
@@ -55,7 +56,9 @@ class Utils:
         for sec in conpar.sections():
             config[sec] = {}
             for k,v in conpar.items(sec):
-                config[sec][k] = convert2obj(v)
+                config[sec][k] = convert2type(v)
+        if section:
+            config = config[section]
         return config
 
     def dict2ini(self, input_dict, filename):

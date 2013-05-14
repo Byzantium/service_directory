@@ -93,7 +93,7 @@ if __name__ == '__main__':
         print('making wrangler')
         client = AvahiWrangler()
         print('setting filters')
-        client.set_filters(filters.all)
+        client.set_filters(filters)
         print('starting wrangler')
         client.start()
         print('waiting')

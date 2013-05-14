@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 # vim: set expandtab tabstop=4 shiftwidth=4 :
 
-from ..filter import AvahiFilter
+from byzantium.avahi.filter import AvahiFilter
 import re
 
 class Filter(AvahiFilter):
+    '''Match all byzantium service types'''
     byz_tcp = re.compile('[\w.-]*__byz__\._tcp')
     byz_udp = re.compile('[\w.-]*__byz__\._udp')
     def match(self, record, action=None):

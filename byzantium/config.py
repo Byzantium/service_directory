@@ -2,6 +2,7 @@
 # vim: set expandtab tabstop=4 shiftwidth=4 :
 
 import os
+import glob
 from .utils import Utils
 from . import const
 
@@ -23,7 +24,13 @@ class Config(object):
 
     def _get_config_dir(self, dirname, ext='conf'):
         confs = []
+        print('_get_config_dir',dirname, ext)
+        if not os.path.isdir(dirname):
+            byz_dir = self.const.get('byzantium_dir')
+            dirname = os.path.join(byz_dir, dirname)
+        print(dirname+'/*.'+ext)
         for f in glob.glob(dirname+'/*.'+ext):
+            print('ext config path: %s' % f)
             conf = Config(path=f)
             confs.append(conf)
             del conf
@@ -31,7 +38,8 @@ class Config(object):
 
     def _get_config(self):
         if os.path.exists(self.config_file):
-            self._values = ini2dict(self.config_file)
+            self._values = self.utils.ini2dict(self.config_file, 'main')
+            print(self._values)
         else:
             self._values = {}
 
@@ -39,8 +47,14 @@ class Config(object):
         return self._values
 
     def _set_type(self, value, default, _type):
-        if _type == 'config_dir': return self._get_config_dir(value)
-        elif not _type or type(value) == _type: return value
+        print('_set_type',value, default, _type)
+        if _type == 'config_dir':
+            print('_set_type: config_dir', value)
+            confs = self._get_config_dir(value)
+            print('found', confs)
+            return confs
+        elif not _type or type(value) == _type:
+            return value
         else:
             try:
                 return _type(value)
@@ -48,7 +62,13 @@ class Config(object):
                 logging.error(e)
         return default
 
-    def get(self, default=None, set_type=None, *keys):
+    def get(self, *keys, **kwargs):
+        default = set_type = None
+        if 'default' in kwargs: default = kwargs['default']
+        if 'set_type' in kwargs: set_type = kwargs['set_type']
+        if set_type in ('config_dir','config'):
+            print('shortcircuit: config typ specified')
+            return self._set_type(keys[0], default, set_type)
         if len(keys) > 1:
             values = self._values.copy()
             for k in keys:
