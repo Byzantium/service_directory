@@ -1,19 +1,18 @@
 .EXPORT_ALL_VARIABLES
 
-SHELL = /bin/sh
-INSTALL_DIR=$(INSTALL) -D 
-INSTALL_EXEC=$(INSTALL) -m 755 
-CLEAN=-rm -rf
-WEBDIR=/srv/httpd/htdocs
-SERVICEDIR=/opt/byzantium/services
+SHELL = /bin/bash
+
+PRGNAM = service_directory
 ## Variables that should be inherited from the parent Makefile or the environment
 # MODULEDIR - the directory where finished modules should but stored
-# PRGNAM - module name
 # VERSION - module/software version (use the short hash of the git commit if you aren't sure)
 # ARCH - from the build environment
 # BYZBUILD - Byzantium build version
 # MODEXT - module extension (should be '.xzm')
 ##
+
+WEBDIR=/srv/httpd/htdocs
+SERVICEDIR=/opt/byzantium/services
 
 # high level targets
 .PHONY : init build module install clean dist-clean web web-clean rc rc-clean backend backend-clean 
