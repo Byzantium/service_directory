@@ -10,43 +10,7 @@ from dbus import DBusException
 from dbus.mainloop.glib import DBusGMainLoop
 from ..utils import Utils
 from .. import const
-from .service_index import ServiceIndex
-
-def envent_to_record(mode,*args):
-    '''
-    ItemNew/ItemRemove:
-        out int interface
-        out int protocol
-        out string name
-        out string stype
-        out string domain
-        out u flags
-    Failure:
-        string error
-    '''
-    record = None
-    if mode in ('ItemNew','ItemRemove'):
-        interface = args[0]
-        protocol = args[1]
-        name = args[2]
-        stype = args[3]
-        domain = args[4]
-        flags = args[5]
-        ipaddr = None
-        fullname = name+'.'+stype+domain
-        record = {'name':fullname,
-                'ipaddr':ipaddr,
-                'port':port,
-                'service_type':stype,
-                'interface':interface,
-                'protocol':protocol,
-                'service_name':name,
-                'domain':domain,
-                'flags':flags
-                }
-    elif mode == 'Failure':
-        record = {'error':args[0]}
-    return record
+from .service_index import ServiceIndex,Record
 
 class AvahiClient(pykka.ThreadingActor):
     def __init__(self, master, service_type='_tcp', domain=None):
@@ -67,34 +31,37 @@ class AvahiClient(pykka.ThreadingActor):
         self.logger = Utils().get_logger()
 
     def add_record(self, *args):
-        srvc = args2record(*args)
-        print('adding')
+        srvc = Record()
+        srvc.from_signal('Found',*args)
         self.logger.debug('adding')
         self.master.tell({'record':srvc,'action':'update'})
 
     def remove_record(self, *args):
-        srvc = args2record(*args)
-        print('removing')
+        srvc = Record()
+        srvc.from_signal('ItemRemove', *args)
+        self.logger.debug('removing')
         self.master.tell({'record':srvc,'action':'remove'})
 
     def handle_new(self, *args):
-        srvc = args2record(*args)
-        self.logger.trace('Found service \'%s\' type \'%s\' domain \'%s\' ' % (srvc['service_name'], srvc['service_type'], srvc['domain']))
-        if flags & avahi.LOOKUP_RESULT_LOCAL:
-            self.logger.trace('Found service \'%s\' type \'%s\' is local ' % (srvc['name'], srvc['service_type']))
+        srvc = Record()
+        srvc.from_signal('ItemNew',*args)
+        self.logger.trace('Found service \'%s\' type \'%s\' domain \'%s\' ' % (srvc.service_name, srvc.service_type, srvc.service_domain))
+        if srvc.flags & avahi.LOOKUP_RESULT_LOCAL:
+            self.logger.trace('Found service \'%s\' type \'%s\' is local ' % (srvc.service_name, srvc.service_type))
             pass
-        self.server.ResolveService(srvc['interface'], srvc['protocol'], srvc['service_name'], srvc['service_type'],
-                            srvc['domain'], avahi.PROTO_UNSPEC, dbus.UInt32(0),
+        self.server.ResolveService(srvc.interface, srvc.protocol, srvc.service_name, srvc.service_type,
+                            srvc.service_domain, avahi.PROTO_UNSPEC, dbus.UInt32(0),
                             reply_handler=self.add_record, error_handler=self.handle_avahi_error)
 
     def handle_dead(self, *args):
-        srvc = args2record(*args)
-        self.logger.trace('Removing service \'%s\' type \'%s\' domain \'%s\' ' % (srvc['service_name'], srvc['service_type'], srvc['domain']))
-        if flags & avahi.LOOKUP_RESULT_LOCAL:
-            self.logger.trace('Local service \'%s\' type \'%s\' is local ' % (srvc['name'], srvc['service_type']))
+        srvc =  Record()
+        srvc.from_signal('ItemRemove',*args)
+        self.logger.trace('Removing service \'%s\' type \'%s\' domain \'%s\' ' % (srvc.service_name, srvc.service_type, srvc.service_domain))
+        if srvc.flags & avahi.LOOKUP_RESULT_LOCAL:
+            self.logger.trace('Local service \'%s\' type \'%s\' is local ' % (srvc.service_name, srvc.service_type))
             pass
-        self.server.ResolveService(srvc['interface'], srvc['protocol'], srvc['service_name'], srvc['service_type'],
-                            srvc['domain'], avahi.PROTO_UNSPEC, dbus.UInt32(0),
+        self.server.ResolveService(srvc.interface, srvc.protocol, srvc.service_name, srvc.service_type,
+                            srvc.service_domain, avahi.PROTO_UNSPEC, dbus.UInt32(0),
                             reply_handler=self.remove_record, error_handler=self.handle_avahi_error)
 
     def handle_avahi_error(self, *args):
