@@ -41,7 +41,6 @@ def envent_to_record(mode,*args):
                 'interface':interface,
                 'protocol':protocol,
                 'service_name':name,
-                'service_type':type,
                 'domain':domain,
                 'flags':flags
                 }
