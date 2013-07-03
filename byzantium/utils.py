@@ -63,11 +63,12 @@ class Utils:
 
     def dict2ini(self, input_dict, filename):
         '''Load all sections of an ini file as a list of dictionaries'''
+        if not filename: raise Exception('No filename passed to dict2ini(data, filename)')
         conpar = configparser.SafeConfigParser()
         config = input_dict
         for sec in config:
             conpar.add_section(str(sec))
-            for k,v in config[sec]:
+            for k,v in config[sec].items():
                 conpar.set(str(sec), str(k), str(v))
         with open(filename, 'wb') as inifile:
             conpar.write(inifile)
