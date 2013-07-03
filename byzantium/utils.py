@@ -12,17 +12,17 @@ except ImportError:
 
 class Utils:
     def __init__(self):
-        self.logging = logging
+        self.logger = logging
         if 'BYZ_DEBUG' in os.environ and os.environ['BYZ_DEBUG']:
-            self.logging.basicConfig(level=logging.DEBUG)
+            self.logger.basicConfig(level=logging.DEBUG)
         else:
-            self.logging.basicConfig(level=logging.ERROR)
+            self.logger.basicConfig(level=logging.ERROR)
 
     def __call__(self):
         return self
 
-    def get_logging(self):
-        return self.logging
+    def get_logger(self):
+        return self.logger
 
     def get_mesh_ip(self):
         ip = ''
@@ -74,7 +74,7 @@ class Utils:
 
     def file2str(self, file_name, mode = 'r'):
         if not os.path.exists(file_name):
-            self.logging.debug('File not found: '+file_name)
+            self.logger.debug('File not found: '+file_name)
             return ''
         fileobj = open(file_name, mode)
         filestr = fileobj.read()
@@ -86,7 +86,7 @@ class Utils:
         try:
             return_value = json.loads(filestr)
         except ValueError as val_e:
-            self.logging.debug(val_e)
+            self.logger.debug(val_e)
             return_value = None
         return return_value
 
@@ -101,7 +101,7 @@ class Utils:
             self.str2file(string, file_name, mode)
             return True
         except TypeError as type_e:
-            self.logging.debug(type_e)
+            self.logger.debug(type_e)
             return False
 
     def read_cache(self, name):

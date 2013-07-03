@@ -5,7 +5,7 @@ from .. import utils
 
 class AvahiFilter:
     def __init__(self):
-        self.logging = utils.Utils().get_logging()
+        self.logger = utils.Utils().get_logger()
 
     def match(self, record, action=None):
         '''

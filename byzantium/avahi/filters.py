@@ -13,7 +13,7 @@ class Filters(list):
 	def __init__(self):
 		self.conf = Config('avahi/external_filters.conf')
 		self.utils = Utils()
-		self.logging = self.utils.get_logging()
+		self.logger = self.utils.get_logger()
 		self.all_filters = []
 		self.get_all_filters()
 
@@ -59,7 +59,7 @@ class Filters(list):
 			mod = __import__(mod_name)
 			return mod
 		except ImportError as e:
-			self.logging.error(e)
+			self.logger.error(e)
 			return None
 
 	def _try_import(self, mod_name, path=[]):
@@ -76,7 +76,7 @@ class Filters(list):
 				sys.path = SYS_PATH_ORIG
 				mod = self._raw_import(mod_name)
 				if not mod:
-					self.logging.warn(warn_not_found)
+					self.logger.warn(warn_not_found)
 					return None
 			return mod
 		finally:
@@ -84,7 +84,7 @@ class Filters(list):
 
 	def get_filter_from(self, path='.', mod_name=None, class_name=None):
 		print('get_filter_from:\npath: %s\nmodule: %s\nclass: %s' % (path, mod_name, class_name))
-		self.logging.debug('get_filter_from:\npath: %s\nmodule: %s\nclass: %s' % (path, mod_name, class_name))
+		self.logger.debug('get_filter_from:\npath: %s\nmodule: %s\nclass: %s' % (path, mod_name, class_name))
 		if path:
 			path_dir = os.path.dirname(path)
 			if os.path.isdir(path): path_dir = path
@@ -98,8 +98,8 @@ class Filters(list):
 				if submod: return submod
 			return mod
 		except ImportError as e:
-			self.logging.error(e)
-			self.logging.warn('module.class "%s.%s" not found' % (mod_name, class_name))
+			self.logger.error(e)
+			self.logger.warn('module.class "%s.%s" not found' % (mod_name, class_name))
 		return None
 
 	def get_internal_filters(self):
@@ -133,7 +133,7 @@ class Filters(list):
 						filter_mod = self.get_filter_from(path, module_name, class_name)
 						print(filter_mod)
 					except ImportError as e:
-						self.logging.error(e)
+						self.logger.error(e)
 						filter_mod = None
 					if filter_mod:
 						self.all_filters.append(filter_mod)
