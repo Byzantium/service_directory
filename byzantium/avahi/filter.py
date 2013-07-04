@@ -9,8 +9,8 @@ class AvahiFilter:
 
     def match(self, record, action=None):
         '''
-        do something with the record passed with a new service, new info about a service or a removed one.
-        return True to have the record stored in the service index
-        return false to let other filters decide
+            Do something with the Record passed with a new service, new info about a service or a removed one.
+            return True to have the Record stored in the service index
+            return false to let other filters decide
         '''
         return False
