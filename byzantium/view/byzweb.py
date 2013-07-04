@@ -20,7 +20,7 @@ class Page:
 		self.on_GET()
 	
 	def set_defaults(self):
-		defaluts = self.default_input.copy()	# avoid overwriting default_input
+		defaults = self.default_input.copy()	# avoid overwriting default_input
 		# merge giving preference to web_input
 		defaults.update(web_input)
 		self.web_input = defaults
