@@ -10,7 +10,7 @@ class Filter(AvahiFilter):
     byz_udp = re.compile('[\w.-]*__byz__\._udp')
     def match(self, record, action=None):
         '''match every record for a byzantium service'''
-        if byz_tcp.match(record['service_type']) or byz_tcp.match(record['service_type']):
+        if byz_tcp.match(record.service_type) or byz_tcp.match(record.service_type):
             return True
         else:
             return False
