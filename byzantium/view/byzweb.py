@@ -26,6 +26,7 @@ class Page:
 		self.web_input = defaults
 
 	def on_GET(self):
+		''' example /placeholder '''
 		self.set_defaults
 		if self.render:
 			self.render.index(self.web_input)
@@ -40,7 +41,9 @@ class Form(Page):
 	def POST(self, *args):
 		self.web_input = web.input()
 		self.on_POST()
+
 	def on_POST(self):
+		''' example /placeholder '''
 		self.set_defaults
 		if self.render:
 			return self.render.index(self.web_input)
