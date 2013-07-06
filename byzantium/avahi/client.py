@@ -28,7 +28,7 @@ class AvahiClient(pykka.ThreadingActor):
         self.service_type = service_type
         self.domain = domain or u'local'
         self.master = master
-        self.logger = Utils().get_logger()
+        self.logger = Utils().get_logger(new=True)
 
     def add_record(self, *args):
         srvc = Record()
@@ -71,10 +71,10 @@ class AvahiClient(pykka.ThreadingActor):
         self.logger.debug('client: got message: %s' % str(repr(message)))
 
     def on_stop(self):
-        print('AvahiClient.on_stop()')
+        self.logger.debug('AvahiClient.on_stop()')
 
     def on_start(self):
-        print('AvahiClient.on_start()')
+        self.logger.debug('AvahiClient.on_start()')
         self.loop = DBusGMainLoop()
         self.bus = dbus.SystemBus(mainloop=self.loop)
         self.server = dbus.Interface( self.bus.get_object(avahi.DBUS_NAME, '/'),
@@ -90,13 +90,15 @@ class AvahiClient(pykka.ThreadingActor):
 
 class AvahiWrangler(pykka.ThreadingActor):
     def __init__(self, filters=[], domain=None, search_service_types=[]):
+        self.logger = Utils().get_logger(name='AvahiWrangler', new=True)
+        self.logger.debug('AvahiWrangler.__init__')
         super(AvahiWrangler, self).__init__()
         self.filters = filters
         self.domain = domain
         self.search_service_types = search_service_types
 
     def on_start(self):
-        print('AvahiWrangler.on_start()')
+        self.logger.debug('AvahiWrangler.on_start()')
         self.service_index = ServiceIndex()
         self.clients = []
         for sst in self.search_service_types:
@@ -104,13 +106,14 @@ class AvahiWrangler(pykka.ThreadingActor):
             self.clients.append(client)
 
     def on_receive(self, message):
-        print('got message: %s' % str(repr(message)))
+        self.logger.debug('got message: %s' % str(repr(message)))
         if type(message) == dict:
             if 'record' in message and 'action' in message:
                 self.send_filtered(message['record'], message['action'])
 
     def send_filtered(self, record, action):
-        print('got record: %s, %s' % (record, action))
+        self.logger.debug('AvahiWrangler.send_filtered')
+        self.logger.debug('got record: %s, %s' % (record, action))
         if True in [x.match(record, action) for i in self.filters]:
             if message['action'] == 'update':
                 self.service_index.update(message['record'])
@@ -118,6 +121,7 @@ class AvahiWrangler(pykka.ThreadingActor):
                 self.service_index.remove(message['record'])
 
     def on_stop(self):
+        self.logger.debug('AvahiWrangler.on_stop')
         [x.stop() for x in self.clients]
 
 if __name__ == '__main__':
