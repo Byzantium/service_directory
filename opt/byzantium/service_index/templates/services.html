@@ -1,4 +1,6 @@
 $def with (services)
 <ul>
-	$services
+	$for srv in services:
+		$if srv:
+			$:srv
 </ul>
