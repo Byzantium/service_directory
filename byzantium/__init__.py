@@ -2,6 +2,7 @@
 # vim: set expandtab tabstop=4 shiftwidth=4 :
 
 import os
+import logging
 try:
     import configparser
 except ImportError:
@@ -39,10 +40,10 @@ class Const:
     def __init__(self):
         self.config = {}
         self.load()
-        print(self.config)
+        logging.debug(str(repr(self.config)))
 
     def get(self, *keys, **kwargs):
-        print('const.get()', keys, kwargs)
+        logging.debug( str(('const.get()', keys, kwargs)) )
         if 'default' in kwargs:
             default = kwargs['default']
         else:
@@ -64,9 +65,9 @@ class Const:
         constants_conf = os.path.join(os.getcwd(), BYZANTIUM_CONSTANTS)
         conpar = configparser.SafeConfigParser()
         conpar.read(constants_conf)
-        print(constants_conf)
-        print(os.path.exists(constants_conf))
-        print(conpar.sections())
+        logging.debug(constants_conf)
+        logging.debug(os.path.exists(constants_conf))
+        logging.debug(conpar.sections())
         self.config = {}
         for sec in conpar.sections():
             if sec == 'main':
