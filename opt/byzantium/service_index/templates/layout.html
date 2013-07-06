@@ -1,0 +1,15 @@
+$def with (content, title=None)
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>
+			$if title:
+				$title
+			else: 
+			Byzantium
+		</title>
+	</head>
+	<body>
+			$:content
+	</body>
+</html>
