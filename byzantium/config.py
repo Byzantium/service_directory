@@ -2,6 +2,7 @@
 # vim: set expandtab tabstop=4 shiftwidth=4 :
 
 import os
+import logging
 import glob
 from .utils import Utils
 from . import const
@@ -15,20 +16,27 @@ class Config(object):
                                     to the default byzantium config
                                     directory.
         '''
+        logging.debug('Config.__init__')
         self.utils = Utils()    # get a Utils object
         self.const = const      # grab const to drag around with you
-        self.logger = self.utils.get_logger()
-        if config_file and os.path.exists(config_file):    # config file is a full path
+        self.logger = self.utils.get_logger('Config')
+        self._values = {}
+        logging.debug('config_file: %s' % str(config_file))
+        if config_file and os.path.exists(config_file):    # config file is an absolute path
+            logging.debug('config_file is an absolute path')
             self.config_file = config_file
-        elif config_file:   # config file is a partial path or absolute path
-            try:
-                # attempt to find the config file in the default config dir
-                self.config_file = os.path.join(self.const.get('byzantium_dir'), config_file)
-            except:
+        elif config_file:   # config file is a partial path
+            logging.debug('config file is a partial path')
+            # attempt to find the config file in the default config dir
+            self.config_file = os.path.join(os.path.abspath(self.const.get('byzantium_dir')), config_file)
+            logging.debug('config_file: %s' % self.config_file)
+            if not os.path.exists(self.config_file):
+                logging.debug('can\'t find: %s' % self.config_file)
                 # i can't find it :(
                 self.config_file = 'no file specified'
         else:
             # why no config file ... i can has config file
+            logging.debug('can\'t find: %s' % self.config_file)
             self.config_file = 'no file specified'
         self._get_config()  # get config file and load it
 
@@ -56,11 +64,13 @@ class Config(object):
 
     def _get_config(self):
         '''load individual config file'''
+        logging.debug('Config._get_config')
         if os.path.exists(self.config_file):
+            logging.debug('found: %s' % self.config_file)
             self._values = self.utils.ini2dict(self.config_file, 'main')
-            self.logger.debug(self._values)
+            logging.debug('self._values: %s' % repr(self._values))
         else:
-            self._values = {}
+            logging.debug('config_file not found: %s' % self.config_file)
 
     def __call__(self):
         return self._values
@@ -95,6 +105,8 @@ class Config(object):
             @param  keys        *str config items and/or sections
             call with config strings in sections->items then kwargs
         '''
+        logging.debug('Config.get', self._values)
+        logging.debug('*keys, **kwargs: %s\n%s' % (str(repr(keys)), str(repr(kwargs))) )
         default = set_type = None
         if 'default' in kwargs: default = kwargs['default']
         if 'set_type' in kwargs: set_type = kwargs['set_type']
@@ -102,10 +114,14 @@ class Config(object):
             self.logger.debug('shortcircuit: config typ specified')
             return self._set_type(keys[0], default, set_type)
         if len(keys) > 1:
+            logging.debug(len(keys)>1)
             values = self._values.copy()
+            logging.debug(values,self._values)
             for k in keys:
+                logging.debug(k,values)
                 if k in values:
                     values = values[k]
+                    logging.debug(values)
             return self._set_type(values, default, set_type)
         elif len(keys) == 1:
             key = keys[0]
