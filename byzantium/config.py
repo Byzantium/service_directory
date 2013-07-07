@@ -31,13 +31,11 @@ class Config(object):
             self.config_file = os.path.join(os.path.abspath(self.const.get('byzantium_dir')), config_file)
             logging.debug('config_file: %s' % self.config_file)
             if not os.path.exists(self.config_file):
-                logging.debug('can\'t find: %s' % self.config_file)
-                # i can't find it :(
-                self.config_file = 'no file specified'
+                # i can't find it >:(
+                raise Exception('Config file not found: %s' % self.config_file)
         else:
             # why no config file ... i can has config file
-            logging.debug('can\'t find: %s' % self.config_file)
-            self.config_file = 'no file specified'
+            raise Exception('Config file not found: %s' % self.config_file)
         self._get_config()  # get config file and load it
 
     def _get_config_dir(self, dirname, ext='conf'):
