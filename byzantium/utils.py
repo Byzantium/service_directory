@@ -5,21 +5,11 @@ import os
 import sys
 import logging
 import subprocess
-from . import convert2type, mknum
+from . import convert_to_type, convert_from_type, mknum
 try:
     import configparser
 except ImportError:
     import ConfigParser as configparser
-
-def __set_file_logging(logger, filename, level):
-    log_file_handler = logging.FileHandler(filename)
-    log_file_handler.setLevel(level)
-    logger.addHandler(log_file_handler)
-
-def __set_stderr_logging(logger, level):
-    log_stream_handler = logging.StreamHandler(sys.stderr)
-    log_stream_handler.setLevel(level)
-    logger.addHandler(log_stream_handler)
 
 class Utils:
     def __init__(self):
@@ -62,16 +52,7 @@ class Utils:
         ip = ''
         return ip
 
-    def convert2obj(self, string):
-        if string:
-            v = string.strip().lower()
-            if v is 'true': return True
-            elif v is 'true': return True
-            elif v is 'false': return False
-            elif v in ('none', 'null', ''): return None
-        return string
-
-    def ini2list(self, filename):
+    def ini2list(self, filename, convert=False):
         '''Load all sections of an ini file as a list of dictionaries'''
         conpar = configparser.SafeConfigParser()
         conpar.read(filename)
@@ -79,10 +60,10 @@ class Utils:
         for sec in conpar.sections():
             section = {}
             for k,v in conpar.items(sec):
-                section[k] = convert2obj(v)
+                section[k] = convert_to_type(v, convert)
         return config
 
-    def ini2dict(self, filename, section=None):
+    def ini2dict(self, filename, section=None, convert=False):
         '''Load all sections of an ini file as a list of dictionaries'''
         conpar = configparser.SafeConfigParser()
         conpar.read(filename)
@@ -93,13 +74,13 @@ class Utils:
             config[sec] = {}
             for k,v in conpar.items(sec):
                 logging.debug('for k, v in conpar.items(sec): k, v: %s, %s' % (k, v))
-                config[sec][k] = convert2type(v)
+                config[sec][k] = convert_to_type(v, convert)
         if section:
             config.update(config[section])
             logging.debug('config.__call__: %s' % repr(config))
         return config
 
-    def dict2ini(self, input_dict, filename):
+    def dict2ini(self, input_dict, filename, convert=False):
         '''Load all sections of an ini file as a list of dictionaries'''
         if not filename: raise Exception('No filename passed to dict2ini(data, filename)')
         conpar = configparser.SafeConfigParser()
@@ -107,7 +88,7 @@ class Utils:
         for sec in config:
             conpar.add_section(str(sec))
             for k,v in config[sec].items():
-                conpar.set(str(sec), str(k), str(v))
+                conpar.set(str(sec), str(k), convert_from_type(v, convert))
         with open(filename, 'wb') as inifile:
             conpar.write(inifile)
 
