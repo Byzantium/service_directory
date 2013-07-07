@@ -1,11 +1,10 @@
-.EXPORT_ALL_VARIABLES
-
 SHELL = /bin/bash
-
 PRGNAM = service_directory
+MODORDER = 001-
+VERSION =
+DESTDIR?=$(BUILDDIR)/$(PRGNAM)
 ## Variables that should be inherited from the parent Makefile or the environment
 # MODULEDIR - the directory where finished modules should but stored
-# VERSION - module/software version (use the short hash of the git commit if you aren't sure)
 # ARCH - from the build environment
 # BYZBUILD - Byzantium build version
 # MODEXT - module extension (should be '.xzm')
@@ -44,10 +43,10 @@ build: init
 install: build web rc backend
 
 module: install
-	dir2xzm $(DESTDIR) $(MODULEDIR)/$(PRGNAM)$(VERSION)-$(ARCH)-$(BYZBUILD).$(MODEXT)
+	dir2xzm $(DESTDIR) $(MODULEDIR)/$(MODORDER)$(PRGNAM)$(VERSION)-$(ARCH)-$(BYZBUILD).$(MODEXT)
 
 clean: web-clean backend-clean
 	# Do *not* remove $(DESTDIR)! If the build is for a monolithic module that will remove everything from every build.
 
 dist-clean: clean
-	$(CLEAN) $(MODULEDIR)/$(PRGNAM)$(VERSION)-$(ARCH)-$(BYZBUILD).$(MODEXT)
+	$(CLEAN) $(MODULEDIR)/$(MODORDER)$(PRGNAM)$(VERSION)-$(ARCH)-$(BYZBUILD).$(MODEXT)
