@@ -17,12 +17,13 @@ def mknum(value, _type, base=10):
         pass
     return value
 
-def convert2type(value):
+def convert_to_type(value, convert=True):
+    if not convert: return value
     if not value or len(value) < 2: return value
     if value.startswith('(list)'):
         value = value.replace('(list)','', 1)
         sep = value.pop(0)
-        return [convert2type(x) for x in value.split(sep)]
+        return [convert_to_type(x) for x in value.split(sep)]
     elif value.startswith('(float)'):
         return mknum(value.replace('(float)','', 1), float)
     elif value.startswith('(int)'):
@@ -35,6 +36,24 @@ def convert2type(value):
         return None
     else:
         return value
+
+def convert_from_type(value, convert=True):
+    if not convert: return value
+    vtype = type(value)
+    if vtype == list:
+        return '(list)[%s]' % ','.join([convert_from_type(x) for x in value.split(sep)])
+    elif vtype == float:
+        return '(float)%s' % str(value)
+    elif vtype == int:
+        return '(int)%s' % str(value)
+    elif value == True:
+        return 'true'
+    elif value == False:
+        return 'false'
+    elif value == None:
+        return '(none)'
+    else:
+        return str(value)
 
 class Const:
     def __init__(self):
@@ -72,11 +91,11 @@ class Const:
         for sec in conpar.sections():
             if sec == 'main':
                 for k,v in conpar.items(sec):
-                    self.config[k] = convert2type(v)
+                    self.config[k] = convert_to_type(v)
             else:
                 self.config[sec] = {}
                 for k,v in conpar.items(sec):
-                    self.config[sec][k] = convert2type(v)
+                    self.config[sec][k] = convert_to_type(v)
         return self.config
 
 const = Const().load()
