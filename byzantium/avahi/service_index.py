@@ -7,58 +7,92 @@ from ..utils import Utils
 from ..config import Config
 from .. import const
 
+EOF = '\00' #FIXME replace with something sensable before release
+EOB = '\n\n' #FIXME replace with something sensable before release
+
 logger = Utils().get_logger(name='ServiceIndex', new=True)
+config = Config('service_index.conf')
+
+class ByzTxtItem:
+    def __init__(self, parent, key, lookup, lookup_default=None, value=None, multiline=False):
+        self.parent = parent
+        self.key = key
+        self.lookup = lookup
+        self.lookup_default = lookup_default
+        self.value = value
+        self.parent.ns[self.get_format()] = self
+        self._multiline = multiline
+
+    def __call__(self):
+        return self.value
+
+    def set(self, value):
+        ''' for the sake of conformity'''
+        self.value = value
+
+    def get(self, key=None):
+        ''' for the sake of conformity'''
+        return self.value
+
+    def append(self, line):
+        if self._multiline:
+            self.value = '\n'.join([self.value, value])
+    
+    def get_format(self):
+        return config.get(self.lookup, default=self.lookup_default)
 
 class ByzTxt:
     '''
         Class to mangle the txt element of avahi records with certian formatting
     '''
-    def __init__(self, txt_record=None, config=None):
+    def __init__(self, txt_record=None):
+        logger.error('txt: %s' % txt_record)
         logger.debug('ByzTxt.__init__')
-        self.config = config
         self.orig = txt_record
-        self.description = None
-        self.append_to_url = None
-        self.ground_station_address = None # not implemented
-        self.pgp = None # not implemented
-        self.ns = (self.config.get('append-string-post-port-key', 'appendtourl'),
-                    self.config.get('service-description-key', 'description'),
-                    self.config.get('groundstation-addr', 'groundstation-addr'),
-                    self.config.get('pgp-pubkey', 'pgp-pubkey'),
-                    self.config.get('pgp-id', 'pgp-id'))
+        self.ns = {}
+        ByzTxtItem(self, 'description', 'service-description-key', 'description')
+        ByzTxtItem(self, 'append_to_url', 'append-string-post-port-key', 'appendtourl')
+        ByzTxtItem(self, 'ground_station_address', 'groundstation-addr', 'groundstation-addr') # not implemented
+        ByzTxtItem(self, 'pgp_id', 'pgp-id', 'pgp-id') # not implemented
+        ByzTxtItem(self, 'pgp_pubkey', 'pgp-pubkey', 'pgp-pubkey') # not implemented
         if self.orig: self.__parse()
+
+    def to_dict(self):
+        d = {}
+        for lookup, obj in self.ns.items():
+            d.update({obj.key:obj.get()})
+        return d
+
+    def __get_key_val_pair(self, line, sep='='):
+        key, val = (line+sep).strip().split(sep,1)
+        val_list = [x for x in val]
+        val_list.pop()
+        val = ''.join(val_list)
+        return key, val
 
     def __parse(self):
         logger.debug('ByzTxt.__parse')
         desc_list = []  # accumulator for the multi-line description
         collect_until_next = None  # container to collect lines until another key is found (or EOF).
-        for line in self.txt.strip().split('\n'):
-            key,val = (line+'=').split('=') # added = on end to prevent it from unpacking to too few items
-            val = val.replace('\n', '')
+        for line in self.orig.strip().split('\n'):
+            logger.error('line: %s' % line)
+            key,val = self.__get_key_val_pair(line)
+            val = val.replace('\r','').replace('\n', '')
             # if key is a defined key, then make sure collect_until_next is set to None
             if key in self.ns:
+                collect_until_next = key
+                self.ns[key].set(val)
+            elif line in (EOB,EOF): # if block is an end of block or end of 'file' (end of the entire txt record)
                 collect_until_next = None
-            if key == self.config.get('append-string-post-port-key', 'appendtourl'):
-                self.append_to_url = val
-            elif key == self.config.get('service-description-key', 'description'):
-                desc_list.append(val)
-                collect_until_next = [desc_list] # a list so it should be a pointer
-            elif key == self.config.get('groundstation-addr', 'groundstation-addr'):
-                self.ground_station_address = val.strip()
-            elif key == self.config.get('pgp-pubkey', 'pgp-pubkey'):
-                pass
-            elif key == self.config.get('pgp-id', 'pgp-id'):
-                pass
-            else:
-                if collect_until_next:
-                    collect_until_next[0].append(line)
-        # reassemble description
-        self.description = '\n'.join(desc_list)
+            elif collect_until_next:
+                # the append method will handle whether or not to actually
+                #append on it's own
+                self.ns[collect_until_next].append(line)
 
 class Record:
     def __init__(self, **kwargs):
         logger.debug('Record.__init__')
-        self.config = kwargs.get('config')
+        self.ns = ['fullname','interface', 'protocol', 'service_name', 'service_type', 'service_domain', 'hostname', 'ip_version', 'ipaddr', 'port', 'txt', 'flags']
         self.fullname = None
         self.interface = kwargs.get('interface')
         self.protocol = kwargs.get('protocol')
@@ -71,38 +105,32 @@ class Record:
         self.port = kwargs.get('port')
         self.txt = kwargs.get('txt')
         self.flags = kwargs.get('flags')
-        self.description = None
-        self.append_to_url = None
+
         self.set_fullname()
         self.byz_txt = None
         if self.txt:
-            self.byz_txt = ByzTxt(self.txt, self.config)
+            self.byz_txt = ByzTxt(self.txt)
 
     def to_dict(self):
         logger.debug('Record.to_dict')
         d = {}
-        d['fullname'] = self.fullname
-        d['interface'] = self.interface
-        d['protocol'] = self.protocol
-        d['service_name'] = self.service_name
-        d['service_type'] = self.service_type
-        d['service_domain'] = self.service_domain
-        d['hostname'] = self.hostname
-        d['ip_version'] = self.ip_version
-        d['ipaddr'] = self.ipaddr
-        d['port'] = self.port
-        d['txt'] = self.txt
-        d['flags'] = self.flags
-        d['append_to_url'] = self.append_to_url
-        d['description'] = self.description
+        for key in self.ns:
+            if key in self.__dict__:
+                d.update({key: self.__dict__[key]})
+        for key, val in self.byz_txt.to_dict().items():
+            if key in d:
+                altkey = 'txt_%s' % key
+                logger.warn('changed dictionary key `%s` to `%s`' % (key, altkey))
+                key = altkey
+            d.update({key:val})
         logger.debug('Record.to_dict: %s' % str(repr(d)) )
         return d
 
     def set_fullname(self):
         ''' set 'fullname' used as a unique id and required by on of the callbacks'''
         logger.debug('Record.set_fullname')
-        if self.name and self.service_type and self.service_domain:
-            self.fullname = '%s.%s%s' % (self.name,self.service_type,self.service_domain)
+        if self.service_name and self.service_type and self.service_domain:
+            self.fullname = '%s.%s%s' % (self.service_name, self.service_type,self.service_domain)
             logger.debug('Record.set_fullname: %s' % self.fullname)
 
     def from_signal(self, signal, args):
@@ -134,8 +162,9 @@ class Record:
 class ServiceIndex:
     def __init__(self):
         logger.debug('ServiceIndex.__init__')
-        self.config = Config('service_index.conf')
-        self.__file = self.config.get('service-index')
+        config_file =  config.get('service-index')
+        if not config_file: raise Exception('Missing service-index entry in service-index.conf')
+        self.__file = config.get('service-index')
         self.utils = Utils()
         self._index = {}
 
@@ -149,12 +178,12 @@ class ServiceIndex:
 
     def _write(self):
         logger.debug('ServiceIndex._write')
-        self.utils.dict2ini(self._index, self.__file)
+        self.utils.dict2ini(self._index, self.__file, convert=True)
 
     def _read(self):
         logger.debug('ServiceIndex._read')
         if self.__file and os.path.exists(self.__file):
-            self._index = self.utils.ini2dict(self.__file)
+            self._index = self.utils.ini2dict(self.__file, convert=True)
 
     def _wipe(self):
         '''clear saved and live copies.'''
