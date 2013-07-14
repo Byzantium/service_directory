@@ -24,11 +24,13 @@ services = ServiceIndex()
 # urls to respond to and classes to use to respond
 urls = ('/(.*)', 'index')
 
+SHOW_TO_HUMANS = ('user', 'human')
+
 class index(Page):
 	'''
 		Renders Service Directory
 	'''
-	default_input = {'lang':'default', 'type':'any'} # for use when we have multi-lang support
+	default_input = {'show':'user', 'lang':'default', 'type':'any'} # for use when we have multi-lang support
 	render = web.template.render(config.get('webpy','templates'), base='layout')	# get templates location from config
 	def on_GET(self):
 		self.logger.debug(repr(config))
@@ -51,7 +53,7 @@ class index(Page):
 		service_list = []
 		# test value for service_list # [{'name':'Test', 'url':'http://example.com', 'desc':'testing 1 2 3', 'service':{}}]
 		services.pull()
-		for name, service in services.get_index().items():
+		for name, service in services.get(show=self.web_input['show']).items():
 			# name is the dictionary index but is included in the service record as well
 			srv = self.get_service(service)
 			if srv: service_list.append(srv)
@@ -80,7 +82,7 @@ class index(Page):
 		if service['port'] and service['port'] > 0:
 			url = '%s:%s' % (url, str(service['port']))	# append port
 		if service['append_to_url']:
-			self.logger.error(('service[append_to_url]',service['append_to_url']))
+			self.logger.debug(('service[append_to_url]',service['append_to_url']))
 			if service['append_to_url'].startswith('/'):
 				url = '%s%s' % (url, service['append_to_url'])
 			else:
@@ -92,7 +94,7 @@ class index(Page):
 				break
 		if not browseable:
 			url = 'http://%s' % url  # prepend protocol
-		self.logger.error('found a url for a service: %s' % str(url))
+		self.logger.debug('found a url for a service: %s' % str(url))
 		return url or ''
 
 	def get_service_desc(self, service):

@@ -46,10 +46,11 @@ class ByzTxt:
         Class to mangle the txt element of avahi records with certian formatting
     '''
     def __init__(self, txt_record=None):
-        logger.error('txt: %s' % txt_record)
+        logger.debug('txt: %s' % txt_record)
         logger.debug('ByzTxt.__init__')
         self.orig = txt_record
         self.ns = {}
+        ByzTxtItem(self, 'show', 'show-service-to-key', 'show')
         ByzTxtItem(self, 'description', 'service-description-key', 'description')
         ByzTxtItem(self, 'append_to_url', 'append-string-post-port-key', 'appendtourl')
         ByzTxtItem(self, 'ground_station_address', 'groundstation-addr', 'groundstation-addr') # not implemented
@@ -75,7 +76,7 @@ class ByzTxt:
         desc_list = []  # accumulator for the multi-line description
         collect_until_next = None  # container to collect lines until another key is found (or EOF).
         for line in self.orig.strip().split('\n'):
-            logger.error('line: %s' % line)
+            logger.debug('line: %s' % line)
             key,val = self.__get_key_val_pair(line)
             val = val.replace('\r','').replace('\n', '')
             # if key is a defined key, then make sure collect_until_next is set to None
@@ -169,24 +170,49 @@ class ServiceIndex:
         self._index = {}
 
     def dump(self):
+        '''
+            get the whole index
+        '''
         logger.debug('ServiceIndex.dump')
         logger.debug(repr(self._index))
         return self._index
 
-    def get_index(self):
-        return self._index
+    def get(self, **attribs):
+        '''
+            if an attrib is set to '*' it will match any record with the
+            attribute regardless of it's value
+        '''
+        if attribs and len(attribs) > 0:
+            index = {}
+            for rid, record in self._index.items():
+                for k, v in attribs.items():
+                    if k in record:
+                        if v == '*' or v == record[k]:
+                            index[rid] = record
+                            break # matched one attrib now move to next record
+            return index
+        else:
+            return self._index
 
     def _write(self):
+        '''
+            write to file
+        '''
         logger.debug('ServiceIndex._write')
         self.utils.dict2ini(self._index, self.__file, convert=True)
 
     def _read(self):
+        '''
+            read from file
+        '''
         logger.debug('ServiceIndex._read')
         if self.__file and os.path.exists(self.__file):
             self._index = self.utils.ini2dict(self.__file, convert=True)
 
     def _wipe(self):
-        '''clear saved and live copies.'''
+        '''
+            clear saved and live copies.
+        '''
         logger.debug('ServiceIndex._wipe')
         self._index = {}
         self._write()
@@ -200,25 +226,33 @@ class ServiceIndex:
         self.update(record)
 
     def update(self, record):
-        '''merge saved and live copies with preference to the live copy'''
+        '''
+            merge saved and live copies with preference to the live copy
+        '''
         logger.debug('ServiceIndex.update')
         self._read()
         self._index.update({record.fullname:record.to_dict()})
         self._write()
 
     def pull(self):
-        ''' dump live copy and read the saved one'''
+        '''
+            dump live copy and read the saved one
+        '''
         logger.debug('ServiceIndex.pull')
         self._index = {}
         self._read()
 
     def push(self):
-        ''' write the live copy overwriting the saved one'''
+        '''
+            write the live copy overwriting the saved one
+        '''
         logger.debug('ServiceIndex.push')
         self._write()
 
     def remove(self, key):
-        '''remove item from the save copy'''
+        '''
+            remove item from the save copy
+        '''
         logger.debug('ServiceIndex.remove')
         self._read()
         if key in self._index:
