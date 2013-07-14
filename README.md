@@ -1,20 +1,14 @@
 ## Description ##
-***DONT USE THIS YET***
+Service directory. A listing of services available on the mesh.
 
-Python module with utilities and core functionality for Byzantium written stuff.
+## Usage ##
+###sysadmins###
+* run ```/opt/byzantium/service_index/services.py``` to manually start.
 
-## Goals ##
-1. All the configs are belong to us.
-1. Make it easy to do things appropriately.
+###users###
+* browse to ```http://byzantium.mesh``` to view the available services
 
-## Random Crap ##
-* directory opt is for root overlay and needs to be shifted elsewhere
-
-## byzantium ##
-* const - constants
-* view - MVC View winness
- * web - web gui bits and pieces
-* config - configuration management
-* utils - random utils
-* avahi - avahi client/registry stuff
- * filters - filters for determining what to record from the avahi firehose.
+### service providers ###
+* avahi records that match the filters in place with ```show=user``` on it's own line of the txt record of the avahi service will be displayed to users.
+* txt records with ```appendtourl=<stuff>``` on it's own line of the txt record will append ```<stuff>``` to the url used to make the link.
+* txt records with ```description=<stuff>`` will take everything following the equals sign to the next token or the end of the string and use it as the description in the entry on the service directory.
