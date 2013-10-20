@@ -24,7 +24,8 @@ services = ServiceIndex()
 # urls to respond to and classes to use to respond
 urls = ('/(.*)', 'index')
 
-SHOW_TO_HUMANS = ('user', 'human')
+SHOW_TO_HUMANS = ('user')
+SHOW_DEBUG = ('debug')
 
 class index(Page):
 	'''
