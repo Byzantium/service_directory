@@ -1,6 +1,10 @@
 $def with (services)
-<ul>
-	$for srv in services:
-		$if srv:
-			$:srv
-</ul>
+<div class="container">
+	<h1>Services On This Mesh Network</h1>
+	<table class="table table-hover table-responsive"> <!-- ?table-condensed? -->
+		<th><td>Service</td><td>Description</td></th>
+		$for srv in services:
+			$if srv:
+				$:srv
+	</table>
+</div>
