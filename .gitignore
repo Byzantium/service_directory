@@ -1,2 +1,4 @@
 *.pyc
 *.pyo
+byzantium_const.conf
+opt/byzantium/byzantium_const.conf
