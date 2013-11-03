@@ -1,5 +1,6 @@
 import web
 import re
+import sys
 import logging
 from byzantium.view.web.page import Page
 from byzantium.config import Config
@@ -17,6 +18,7 @@ const = config.const
 
 # copy of an Utils object
 utils = config.utils
+utils.write_pid(sys.argv[0])
 
 # new ServiceIndex object
 services = ServiceIndex()
@@ -33,6 +35,7 @@ class index(Page):
 	'''
 	default_input = {'show':'user', 'lang':'default', 'type':'any'} # for use when we have multi-lang support
 	render = web.template.render(config.get('webpy','templates'), base='layout')	# get templates location from config
+
 	def on_GET(self):
 		self.logger.debug(repr(config))
 		self.logger.debug(config.get('webpy','templates'))
@@ -49,21 +52,54 @@ class index(Page):
 			logging.debug('\n\nNo services\n\n')
 			return self.render.no_services()
 
+	def filter_records(self, records):
+		filter_by = self.web_input['filterby'] or '*'
+		filter_word = self.web_input['filter'] or '*'
+		records = [ (not self.filter_record(filter_by, filter_word, x) or x) for x in records ]
+		return records
+
+	def filter_record(self, filter_by, filter_word, record):
+		if not filter_word:
+			return False
+		if type(filter_by) == list:
+			for key, value in record.items():
+				if key in filter_by and value.contains(filter_word):
+					return True
+		elif filter_by in record:
+			return str(record[filter_by]).contains(filter_word)
+		elif filter_by == '*':
+			for r in record.values():
+				if r.contains(filter_word):
+					return True
+		return False
+
+	def sort_records(self, records):
+		sort_by = self.web_input['sortby'] or 'name'
+		sort_direction = self.web_input['sortdir'] or ASCENDING
+		sorted(records, key=lambda r: r[sort_by])
+		if sort_direction == DESCENDING:
+			records.reverse()
+		return records
+
 	def get_services(self):
 		self.logger.debug('getting services')
 		service_list = []
 		# test value for service_list # [{'name':'Test', 'url':'http://example.com', 'desc':'testing 1 2 3', 'service':{}}]
 		services.pull()
-		for name, service in services.get(show=self.web_input['show']).items():
+		attribs = {'show':self.web_input['show']}
+		service_list = self.filter_records(service_list)
+		for name, service in services.get(**attribs).items():
 			# name is the dictionary index but is included in the service record as well
 			srv = self.get_service(service)
-			if srv: service_list.append(srv)
-		if not service_list: service_list = []
+			if srv:
+				service_list.append(srv)
+		service_list = self.sort_records(service_list)
 		return service_list
 
 	def get_service(self, service):
 		self.logger.debug('getting a service: %s' % str(service))
-		if not service: return None
+		if not service:
+			return None
 		name = service['service_name'] or 'unknown'
 		url = self.get_service_url(service)
 		desc = self.get_service_desc(service)
@@ -100,11 +136,13 @@ class index(Page):
 
 	def get_service_desc(self, service):
 		self.logger.debug('getting a description for a service: %s' % str(service))
-		#FIXME: Add sanitization of description: pre 5.0b
+		#FIXME: Add sanitization of description: asap
 		desc = service['description']
 		self.logger.debug('found a description for a service: %s' % str(desc))
 		return desc or ''
 
 if __name__ == "__main__":
 	app = web.application(urls, globals())
+	byzantium
 	app.run()
+	utils.remove_pid(sys.argv[0])
