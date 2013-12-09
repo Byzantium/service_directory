@@ -1,7 +1,7 @@
 SHELL = /bin/bash
 PRGNAM = service_directory
 MODORDER = 001-
-VERSION =
+VERSION = $(shell git rev-parse --short HEAD)
 DESTDIR?=$(BUILDDIR)/$(PRGNAM)
 ## Variables that should be inherited from the parent Makefile or the environment
 # MODULEDIR - the directory where finished modules should but stored
